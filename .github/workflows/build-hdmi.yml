@@ -1,0 +1,55 @@
+name: Build gb_hdmi firmware
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "master", "work"]
+  pull_request:
+
+jobs:
+  build-rp2040:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gcc-arm-none-eabi
+
+      - name: Fetch pico-sdk (expected by project layout)
+        run: |
+          if [ ! -d src/pico-sdk ]; then
+            git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git src/pico-sdk
+          fi
+
+      - name: Configure
+        run: |
+          cmake -S src/gb_vga -B build -G Ninja \
+            -DPICO_SDK_PATH=${{ github.workspace }}/src/pico-sdk
+
+      - name: Build
+        run: |
+          cmake --build build -j
+
+      - name: Validate expected outputs
+        run: |
+          test -f build/gb_hdmi.uf2
+          test -f build/gb_hdmi.hex
+          test -f build/gb_hdmi.elf
+          test -f build/gb_hdmi.bin
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gb_hdmi-firmware
+          path: |
+            build/gb_hdmi.uf2
+            build/gb_hdmi.hex
+            build/gb_hdmi.bin
+            build/gb_hdmi.elf

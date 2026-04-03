@@ -1,0 +1,6 @@
+# Release binaries should not be committed
+releases/gb_hdmi_v1.0.0/gb_hdmi.uf2
+releases/gb_hdmi_v1.0.0/gb_hdmi.hex
+releases/gb_hdmi_v1.0.0/gb_hdmi.bin
+releases/gb_hdmi_v1.0.0/gb_hdmi.elf
+releases/gb_hdmi_v1.0.0/SHA256SUMS.txt
