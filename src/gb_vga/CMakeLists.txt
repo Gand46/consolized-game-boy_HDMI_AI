@@ -1,57 +1,49 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
-# Pull in PICO SDK (must be before project).
+# HDMI/DVI-only transition (VGA path disabled by design)
 include(../pico-sdk/external/pico_sdk_import.cmake)
 
-# We also need PICO EXTRAS.
-include(../pico-extras/external/pico_extras_import.cmake)
-
-project(gb_vga C CXX ASM)
+project(gb_hdmi_transition C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-# Initialize the Pico SDK.
 pico_sdk_init()
 
-if (TARGET pico_scanvideo_dpi)
-    add_executable(gb_vga
-            osd.c
-            colors.c
-            eeprom.c
-            )
+include(FetchContent)
+FetchContent_Declare(
+    picodvi
+    GIT_REPOSITORY https://github.com/Wren6991/PicoDVI.git
+    GIT_TAG b58f3064377ef1dc484f6bad3337abbb88d32ca6
+)
+FetchContent_MakeAvailable(picodvi)
 
-    target_sources(gb_vga PRIVATE gb_vga.c)
+add_subdirectory(${picodvi_SOURCE_DIR}/software/libdvi ${picodvi_BINARY_DIR}/libdvi)
 
-    target_compile_definitions(gb_vga PRIVATE
-        -DPICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=500
-        )
+# Keep artifact name aligned with HDMI path. VGA target is intentionally disabled.
+add_executable(gb_hdmi
+    ../gb_hdmi/gb_hdmi.c
+)
 
-    # RGB222
-    add_compile_definitions(PICO_SCANVIDEO_COLOR_PIN_COUNT=6)    # scanvideo_base.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_RSHIFT=4)   # scanvideo.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_GSHIFT=2)   # scanvideo.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_BSHIFT=0)   # scanvideo.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_RCOUNT=2)   # scanvideo.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_GCOUNT=2)   # scanvideo.h
-    add_compile_definitions(PICO_SCANVIDEO_DPI_PIXEL_BCOUNT=2)   # scanvideo.h
+target_include_directories(gb_hdmi PRIVATE
+    ${picodvi_SOURCE_DIR}/software/include
+)
 
-    target_link_libraries(gb_vga PRIVATE
-            pico_multicore
-            pico_stdlib
-            pico_scanvideo_dpi
-            hardware_i2c
-            hardware_flash
-            )
+target_compile_definitions(gb_hdmi PRIVATE
+    DVI_DEFAULT_SERIAL_CONFIG=picodvi_pmod0_cfg
+)
 
-endif ()
-    
-pico_set_linker_script(gb_vga ${CMAKE_SOURCE_DIR}/memmap_custom.ld)
+target_link_libraries(gb_hdmi PRIVATE
+    pico_stdlib
+    pico_multicore
+    libdvi
+    hardware_clocks
+    hardware_gpio
+    hardware_irq
+    hardware_sync
+    hardware_vreg
+)
 
-pico_set_program_name(gb_vga "gb_vga")
-pico_set_program_version(gb_vga "2.4.2")
+pico_set_program_name(gb_hdmi "gb_hdmi")
+pico_set_program_version(gb_hdmi "1.0.0")
 
-# UART & USB
-# pico_enable_stdio_usb(gb_vga 1)
-# pico_enable_stdio_uart(gb_vga 0)
-
-pico_add_extra_outputs(gb_vga)
+pico_add_extra_outputs(gb_hdmi)

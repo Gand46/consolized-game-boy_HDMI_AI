@@ -96,3 +96,33 @@ Fase 3 — Cierre
 - **No es un cambio solo de software**: hay cambios obligatorios de hardware + firmware.
 - Camino recomendado: base `PicoDVI/libdvi` para RP2040, no `pico_scanvideo_dpi`.
 - El enfoque más seguro es migración por fases con PoC previo antes de rediseñar PCB/BOM.
+
+## 8) Impactos de implementación validados tras la transición HDMI-only
+
+1. **Build system**: la ruta de compilación queda orientada a `gb_hdmi` (DVI/TMDS) y se deshabilita la ruta VGA en configuración CMake.
+2. **Hardware**: se elimina dependencia funcional de `scanvideo_dpi` + conversor VGA→HDMI, reemplazando por cadena TMDS directa compatible PicoDVI.
+3. **Riesgo operativo**: el overclock requerido por DVI mantiene sensibilidad a temperatura/lote de RP2040; se recomienda prueba de estabilidad larga por unidad.
+4. **Compatibilidad de display**: sigue siendo video DVI transportado por HDMI (sin garantizar cobertura 100% en todos los receptores HDMI).
+
+## 9) Proyección de inclusión de sonido en HDMI
+
+Estado actual de esta transición: **solo video DVI/TMDS**.
+
+Para incorporar audio embebido en HDMI hay tres caminos:
+
+1. **Migrar a plataforma con bloque HDMI/A/V dedicado** (opción de menor riesgo para audio estable):
+   - Ventaja: audio+video HDMI nativos con menor complejidad firmware.
+   - Desventaja: cambio de plataforma y rediseño más amplio.
+
+2. **Mantener RP2040 y añadir coprocesador/transmisor HDMI con entrada I2S/SPDIF**:
+   - Ventaja: preserva núcleo actual del proyecto.
+   - Desventaja: añade BOM, complejidad de sincronización A/V y firmware adicional.
+
+3. **Intentar audio en pipeline TMDS por software en RP2040**:
+   - Técnicamente muy exigente por presupuesto de CPU/PIO/DMA ya comprometido por video.
+   - Recomendación: no planificarlo como hito inmediato si se busca robustez de producto.
+
+Roadmap sugerido para audio:
+- Hito A: cerrar estabilidad de video HDMI-only.
+- Hito B: definir arquitectura de audio externa (I2S/SPDIF + transmisor).
+- Hito C: validación de sincronía labial y compatibilidad en matriz de TVs/monitores.
