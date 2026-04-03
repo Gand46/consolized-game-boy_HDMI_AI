@@ -43,3 +43,20 @@ element14 Community pages:
  - https://community.element14.com/challenges-projects/element14-presents/project-videos/w/documents/27407
  - https://community.element14.com/w/documents/27862/episode-577-the-game-guy-mini-upgrading-the-unportable-game-boy
 
+
+## HDMI directo (experimental, RP2040 DVI/TMDS)
+
+Se añadió un target experimental `gb_hdmi` en `src/gb_hdmi` para sacar video digital directo (DVI sobre conector HDMI) usando la librería PicoDVI (`libdvi`).
+
+### Build rápido
+
+```bash
+cd src/gb_hdmi
+mkdir -p build && cd build
+PICO_SDK_PATH=../pico-sdk cmake ..
+cmake --build . -j
+```
+
+Notas:
+- Requiere overclock para 640x480p60 (configurado en firmware).
+- La salida usa un pinout TMDS tipo `picodvi_pmod0_cfg` y necesita la etapa física resistiva/cableado TMDS compatible.
